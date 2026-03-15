@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>怪物彈珠抽卡量化分析器 (百萬次模擬版)</title>
+    <title>怪物彈珠抽卡量化分析器</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body { font-family: "Microsoft JhengHei", sans-serif; background-color: #f0f2f5; color: #333; padding: 20px; display: flex; justify-content: center; margin: 0; }
@@ -19,10 +19,12 @@
         .tab-content.active { display: block; }
 
         .control-group { background: #fafafa; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #eee; display: flex; flex-wrap: wrap; gap: 15px; align-items: center;}
-        input[type="number"] { width: 70px; padding: 6px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
+        input[type="number"] { width: 80px; padding: 6px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
+        select { padding: 6px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
         
         button { padding: 10px 20px; border: none; border-radius: 6px; background-color: #1976d2; color: white; cursor: pointer; font-weight: bold; transition: 0.2s; font-size: 14px;}
         button:hover { background-color: #1565c0; }
+        button:disabled { background-color: #999; cursor: not-allowed; }
 
         /* Stats Cards */
         .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px; }
@@ -55,7 +57,7 @@
 
 <div class="container">
     <h2>📊 怪物彈珠量化預測系統</h2>
-    <div class="subtitle">🎯 核心引擎已升級為 1,000,000 次 (百萬級) 蒙地卡羅模擬</div>
+    <div class="subtitle">🎯 基於蒙地卡羅方法 (Monte Carlo Simulation) 進行機率推算</div>
     
     <div class="tabs">
         <div class="tab-btn active" onclick="switchTab('mode1')">模式一：目標達成所需抽數 (固定目標)</div>
@@ -66,6 +68,16 @@
     <div class="control-group">
         <div><label>目標常規機率: <input type="number" id="targetRate" value="1.2" step="0.1" min="0" max="12"></label>%</div>
         <div><label>初始星星碎片: <input type="number" id="currentShards" value="0" min="0" max="49"></label></div>
+        <div>
+            <label>模擬樣本數: 
+                <select id="simCount">
+                    <option value="100000">10 萬次 (快速)</option>
+                    <option value="500000">50 萬次 (平衡)</option>
+                    <option value="1000000" selected>100 萬次 (高精度)</option>
+                    <option value="5000000">500 萬次 (需較高硬體效能)</option>
+                </select>
+            </label>
+        </div>
         <div style="width: 100%; font-size: 12px; color: #666;">(五星基礎率 12%，觸發非洲玉時中標率將自動換算)</div>
     </div>
 
@@ -75,7 +87,7 @@
             <label>想抽到幾隻目標角色？ 
                 <input type="number" id="targetCopies" value="1" min="1" max="10">
             </label>
-            <button onclick="calculateMode1()" style="background-color: #2e7d32; margin-left: auto;">🚀 執行 100 萬次模擬</button>
+            <button onclick="calculateMode1()" style="background-color: #2e7d32; margin-left: auto;" id="btnMode1">🚀 執行模擬</button>
         </div>
 
         <div id="mode1Results" style="display: none;">
@@ -107,7 +119,7 @@
                 <canvas id="cdfChart"></canvas>
             </div>
             <div style="text-align: center; font-size: 13px; color: #666; margin-bottom: 20px;">
-                圖表說明：隨抽數增加，累積獲得目標的機率變化 (CDF)。樣本數：1,000,000。<br>
+                圖表說明：隨抽數增加，累積獲得目標的機率變化 (CDF)。樣本數：<span id="dispSimCount1"></span>。<br>
                 曲線陡峭上升的區間，代表非洲玉保底機制的密集觸發點。
             </div>
 
@@ -130,11 +142,11 @@
             <label>準備了多少抽？ (寶珠÷5): 
                 <input type="number" id="simPulls" value="100" min="10" max="5000">
             </label>
-            <button onclick="calculateMode2()" style="background-color: #f57c00; margin-left: auto;">🚀 執行 100 萬次模擬</button>
+            <button onclick="calculateMode2()" style="background-color: #f57c00; margin-left: auto;" id="btnMode2">🚀 執行模擬</button>
         </div>
         
         <div id="mode2Results" style="display: none;">
-            <p style="font-size: 14px; margin-bottom: 5px;"><strong>📊 模擬 <span id="resPulls">100</span> 抽結果分佈 (樣本數: 1,000,000)</strong></p>
+            <p style="font-size: 14px; margin-bottom: 5px;"><strong>📊 模擬 <span id="resPulls">100</span> 抽結果分佈 (樣本數: <span id="dispSimCount2"></span>)</strong></p>
             <p style="font-size: 13px; color: #444; margin-top: 0;">數學期望值 (平均可得): <strong id="resAvg" style="color: #d32f2f; font-size: 16px;">0.00</strong> 隻</p>
             
             <table class="data-table" id="distTable">
@@ -165,68 +177,76 @@
 
     // --- Mode 1: 固定隻數求抽數 (CDF) ---
     function calculateMode1() {
-        let rate = parseFloat(document.getElementById('targetRate').value);
-        let startShards = parseInt(document.getElementById('currentShards').value) || 0;
-        let targetCopies = parseInt(document.getElementById('targetCopies').value) || 1;
-        
-        // 1,000,000 次模擬
-        let iterations = 1000000; 
-        
-        let results = new Int32Array(iterations);
-        let htRate = rate / 12.0 * 100;
-        
-        for (let i = 0; i < iterations; i++) {
-            let hits = 0;
-            let pulls = 0;
-            let s = startShards;
+        let btn = document.getElementById('btnMode1');
+        btn.innerText = "運算中...";
+        btn.disabled = true;
+
+        // 使用 setTimeout 讓瀏覽器有時間更新按鈕文字，避免畫面凍結
+        setTimeout(() => {
+            let rate = parseFloat(document.getElementById('targetRate').value);
+            let startShards = parseInt(document.getElementById('currentShards').value) || 0;
+            let targetCopies = parseInt(document.getElementById('targetCopies').value) || 1;
             
-            while (hits < targetCopies) {
-                pulls++;
-                let rand = Math.random() * 100;
+            // 讀取使用者選擇的模擬次數
+            let iterations = parseInt(document.getElementById('simCount').value) || 1000000; 
+            document.getElementById('dispSimCount1').innerText = iterations.toLocaleString();
+            
+            let results = new Int32Array(iterations);
+            let htRate = rate / 12.0 * 100;
+            
+            for (let i = 0; i < iterations; i++) {
+                let hits = 0;
+                let pulls = 0;
+                let s = startShards;
                 
-                if (rand < rate) {
-                    hits++; // 常規中標
-                } else if (rand >= 12.0) {
-                    s++; // 四星，碎片+1
-                    if (s >= 50) {
-                        s = 0; // 觸發非洲玉
-                        if ((Math.random() * 100) < htRate) {
-                            hits++;
+                while (hits < targetCopies) {
+                    pulls++;
+                    let rand = Math.random() * 100;
+                    
+                    if (rand < rate) {
+                        hits++; 
+                    } else if (rand >= 12.0) {
+                        s++; 
+                        if (s >= 50) {
+                            s = 0; 
+                            if ((Math.random() * 100) < htRate) {
+                                hits++;
+                            }
                         }
                     }
                 }
+                results[i] = pulls;
             }
-            results[i] = pulls;
-        }
 
-        // 排序以計算百分位數
-        results.sort();
+            results.sort();
 
-        // 統計指標
-        let p25 = results[Math.floor(iterations * 0.25)];
-        let p50 = results[Math.floor(iterations * 0.50)];
-        let p85 = results[Math.floor(iterations * 0.85)];
-        let p99 = results[Math.floor(iterations * 0.99)];
+            let p25 = results[Math.floor(iterations * 0.25)];
+            let p50 = results[Math.floor(iterations * 0.50)];
+            let p85 = results[Math.floor(iterations * 0.85)];
+            let p99 = results[Math.floor(iterations * 0.99)];
 
-        document.getElementById('stat25').innerText = p25;
-        document.getElementById('stat50').innerText = p50;
-        document.getElementById('stat85').innerText = p85;
-        document.getElementById('stat99').innerText = p99;
+            document.getElementById('stat25').innerText = p25;
+            document.getElementById('stat50').innerText = p50;
+            document.getElementById('stat85').innerText = p85;
+            document.getElementById('stat99').innerText = p99;
 
-        // 構建 CDF
-        let maxPulls = results[Math.floor(iterations * 0.995)]; 
-        let cdfData = new Array(maxPulls + 1).fill(0);
-        let resIdx = 0;
-        for (let p = 1; p <= maxPulls; p++) {
-            while (resIdx < iterations && results[resIdx] <= p) {
-                resIdx++;
+            let maxPulls = results[Math.floor(iterations * 0.995)]; 
+            let cdfData = new Array(maxPulls + 1).fill(0);
+            let resIdx = 0;
+            for (let p = 1; p <= maxPulls; p++) {
+                while (resIdx < iterations && results[resIdx] <= p) {
+                    resIdx++;
+                }
+                cdfData[p] = (resIdx / iterations) * 100;
             }
-            cdfData[p] = (resIdx / iterations) * 100;
-        }
 
-        document.getElementById('mode1Results').style.display = 'block';
-        updateCdfChart(cdfData, maxPulls, targetCopies);
-        renderMilestoneTable(results, iterations);
+            document.getElementById('mode1Results').style.display = 'block';
+            updateCdfChart(cdfData, maxPulls, targetCopies);
+            renderMilestoneTable(results, iterations);
+
+            btn.innerText = "🚀 執行模擬";
+            btn.disabled = false;
+        }, 50); 
     }
 
     function updateCdfChart(cdfData, maxPulls, copies) {
@@ -303,69 +323,78 @@
 
     // --- Mode 2: 固定抽數求隻數 (PDF) ---
     function calculateMode2() {
-        let rate = parseFloat(document.getElementById('targetRate').value);
-        let startShards = parseInt(document.getElementById('currentShards').value) || 0;
-        let maxPulls = parseInt(document.getElementById('simPulls').value) || 100;
-        
-        // 1,000,000 次模擬
-        let iterations = 1000000; 
-        
-        let resultCounts = {}; 
-        let totalHitsAcrossSims = 0;
-        let htRate = rate / 12.0 * 100;
+        let btn = document.getElementById('btnMode2');
+        btn.innerText = "運算中...";
+        btn.disabled = true;
 
-        for (let i = 0; i < iterations; i++) {
-            let hits = 0;
-            let s = startShards;
-            for (let p = 0; p < maxPulls; p++) {
-                let rand = Math.random() * 100;
-                if (rand < rate) {
-                    hits++;
-                } else if (rand >= 12.0) {
-                    s++;
-                    if (s >= 50) {
-                        s = 0;
-                        if ((Math.random() * 100) < htRate) hits++;
+        setTimeout(() => {
+            let rate = parseFloat(document.getElementById('targetRate').value);
+            let startShards = parseInt(document.getElementById('currentShards').value) || 0;
+            let maxPulls = parseInt(document.getElementById('simPulls').value) || 100;
+            
+            let iterations = parseInt(document.getElementById('simCount').value) || 1000000; 
+            document.getElementById('dispSimCount2').innerText = iterations.toLocaleString();
+            
+            let resultCounts = {}; 
+            let totalHitsAcrossSims = 0;
+            let htRate = rate / 12.0 * 100;
+
+            for (let i = 0; i < iterations; i++) {
+                let hits = 0;
+                let s = startShards;
+                for (let p = 0; p < maxPulls; p++) {
+                    let rand = Math.random() * 100;
+                    if (rand < rate) {
+                        hits++;
+                    } else if (rand >= 12.0) {
+                        s++;
+                        if (s >= 50) {
+                            s = 0;
+                            if ((Math.random() * 100) < htRate) hits++;
+                        }
                     }
                 }
+                resultCounts[hits] = (resultCounts[hits] || 0) + 1;
+                totalHitsAcrossSims += hits;
             }
-            resultCounts[hits] = (resultCounts[hits] || 0) + 1;
-            totalHitsAcrossSims += hits;
-        }
 
-        document.getElementById('mode2Results').style.display = 'block';
-        document.getElementById('resPulls').innerText = maxPulls;
-        document.getElementById('resAvg').innerText = (totalHitsAcrossSims / iterations).toFixed(2);
+            document.getElementById('mode2Results').style.display = 'block';
+            document.getElementById('resPulls').innerText = maxPulls;
+            document.getElementById('resAvg').innerText = (totalHitsAcrossSims / iterations).toFixed(2);
 
-        let tbody = document.querySelector('#distTable tbody');
-        tbody.innerHTML = '';
+            let tbody = document.querySelector('#distTable tbody');
+            tbody.innerHTML = '';
 
-        let maxHitsToShow = Math.max(...Object.keys(resultCounts).map(Number));
-        if (maxHitsToShow > 10) maxHitsToShow = 10; 
+            let maxHitsToShow = Math.max(...Object.keys(resultCounts).map(Number));
+            if (maxHitsToShow > 10) maxHitsToShow = 10; 
 
-        let cumulativeProb = 100.0; 
-        let groupedOver10 = 0;
+            let cumulativeProb = 100.0; 
+            let groupedOver10 = 0;
 
-        for (let k = 0; k <= maxHitsToShow; k++) {
-            let count = resultCounts[k] || 0;
-            if (k === 10) {
-                for(let key in resultCounts) if(Number(key) >= 10) groupedOver10 += resultCounts[key];
-                count = groupedOver10;
+            for (let k = 0; k <= maxHitsToShow; k++) {
+                let count = resultCounts[k] || 0;
+                if (k === 10) {
+                    for(let key in resultCounts) if(Number(key) >= 10) groupedOver10 += resultCounts[key];
+                    count = groupedOver10;
+                }
+                
+                let prob = (count / iterations) * 100;
+                let label = k === 10 ? "10 隻以上" : `${k} 隻`;
+                
+                let tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><strong>${label}</strong></td>
+                    <td>${prob.toFixed(3)}%</td>
+                    <td><div class="bar-chart" style="width: ${Math.max(0.5, Math.min(prob, 100))}%;"></div></td>
+                    <td style="color: #d32f2f; font-weight: bold;">${k===0 ? "100.00" : cumulativeProb.toFixed(3)}%</td>
+                `;
+                tbody.appendChild(tr);
+                cumulativeProb -= prob; 
             }
             
-            let prob = (count / iterations) * 100;
-            let label = k === 10 ? "10 隻以上" : `${k} 隻`;
-            
-            let tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td><strong>${label}</strong></td>
-                <td>${prob.toFixed(3)}%</td>
-                <td><div class="bar-chart" style="width: ${Math.max(0.5, Math.min(prob, 100))}%;"></div></td>
-                <td style="color: #d32f2f; font-weight: bold;">${k===0 ? "100.00" : cumulativeProb.toFixed(3)}%</td>
-            `;
-            tbody.appendChild(tr);
-            cumulativeProb -= prob; 
-        }
+            btn.innerText = "🚀 執行模擬";
+            btn.disabled = false;
+        }, 50); 
     }
 </script>
 
