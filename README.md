@@ -222,10 +222,6 @@ npx serve .
 
 ## 🙏 致謝與靈感來源 (Acknowledgements)
 
-- **UI 與數學展示靈感**
-  - [FGO 抽卡機率計算](https://fgo-friend.illya.tw/strange-tool/gashapon-p-calc)
-  - [米池計算器](https://gino8246.github.io/Gacha_Simulator/)
-
 - **資料視覺化**
   - [Chart.js](https://www.chartjs.org/) 提供簡潔又強大的圖表套件（MIT，已本地 vendored）。
 
