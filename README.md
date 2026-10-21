@@ -4,7 +4,7 @@
 
 幫助玩家在抽卡前進行較為科學的寶珠資源規劃，減少完全「瞎抽」的情況。
 
-> **點我進入 →** `https://your-username.github.io/your-repo-name/`（部署後請把本連結換成你的 GitHub Pages 網址）
+> **點我進入 →** https://nicholaschung1025-dot.github.io/Monster-Strike-Getcha-Simulator/
 
 ---
 
@@ -178,6 +178,9 @@ npx serve .
 3. 儲存後稍等一會兒，GitHub 會產生一個網址，例如：
    `https://your-username.github.io/your-repo-name/`
 4. 將此網址填到本 README 的「點我進入」連結中。
+
+> 本專案目前的線上版本：**https://nicholaschung1025-dot.github.io/Monster-Strike-Getcha-Simulator/**
+> （來源分支 `main`，發布路徑 `/(root)`，每次 push 自動重新建置。）
 
 ---
 
