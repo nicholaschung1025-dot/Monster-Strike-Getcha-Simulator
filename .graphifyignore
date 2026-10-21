@@ -1,0 +1,2 @@
+# graphify 掃描排除：第三方 vendored 套件不是本專案的內容
+assets/vendor/

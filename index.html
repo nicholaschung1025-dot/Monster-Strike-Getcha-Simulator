@@ -1,126 +1,515 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh-Hant">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>怪物彈珠抽卡量化分析器</title>
-    <!-- 引入外部 CSS -->
-    <link rel="stylesheet" href="ui.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>怪物彈珠抽卡分析器 — 蒙地卡羅寶珠資源規劃</title>
+<meta name="description" content="《怪物彈珠》進階抽卡預測工具。以蒙地卡羅方法在瀏覽器端執行 100 萬次模擬，計算含「非洲玉」保底機制的抽卡機率分佈，協助你規劃寶珠資源。">
+<meta name="theme-color" content="#080c22">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap">
+<link rel="stylesheet" href="ui.css">
 </head>
 <body>
 
-<div class="container">
-    <h2>📊 怪物彈珠量化預測系統</h2>
-    <div class="subtitle">🎯 基於蒙地卡羅方法 (Monte Carlo Simulation) 進行機率推算</div>
-    
-    <div class="tabs">
-        <div class="tab-btn active" onclick="switchTab('mode1', event)">模式一：目標達成所需抽數 (固定目標)</div>
-        <div class="tab-btn" onclick="switchTab('mode2', event)">模式二：預期獲得數量 (固定抽數)</div>
+<div class="bg-base" aria-hidden="true"></div>
+<div class="bg-grid" aria-hidden="true"></div>
+<div class="bg-aurora" aria-hidden="true"></div>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="brand" href="#top">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <span class="brand-name">怪物彈珠抽卡分析器</span>
+    </a>
+    <div class="topbar-meta">
+      <span class="meta-chip">目標 <b id="metaRate">1.2%</b></span>
+      <span class="meta-chip">非洲玉 <b id="metaJade">10.0%</b></span>
+      <span class="meta-chip">樣本 <b id="metaIter">100 萬</b></span>
     </div>
+    <nav class="topnav" aria-label="主要導覽">
+      <a href="#model">機率模型</a>
+      <a href="#faq">常見迷思</a>
+      <a href="#legal">免責聲明</a>
+    </nav>
+  </div>
+</header>
 
-    <!-- 共用參數設定 -->
-    <div class="control-group">
-        <div><label>目標常規機率: <input type="number" id="targetRate" value="1.2" step="0.1" min="0" max="12"></label>%</div>
-        <div><label>初始星星碎片: <input type="number" id="currentShards" value="0" min="0" max="49"></label></div>
-        <div>
-            <label>模擬樣本數: 
-                <select id="simCount">
-                    <option value="100000">10 萬次 (快速)</option>
-                    <option value="500000">50 萬次 (平衡)</option>
-                    <option value="1000000" selected>100 萬次 (高精度)</option>
-                    <option value="5000000">500 萬次 (需較高硬體效能)</option>
-                </select>
-            </label>
+<main id="top">
+
+  <!-- ============================ 儀表板 ============================ -->
+  <section class="dash">
+    <aside class="dash-params">
+      <div class="panel">
+        <h2 class="panel-title">共用參數</h2>
+
+        <div class="field">
+          <label for="targetRate">目標常規機率</label>
+          <div class="field-inline">
+            <input type="number" id="targetRate" value="1.2" min="0.05" max="12" step="0.1" inputmode="decimal">
+            <span class="unit">%</span>
+          </div>
+          <div class="chips" id="ratePresets">
+            <button type="button" class="chip" data-rate="0.4">0.4%</button>
+            <button type="button" class="chip" data-rate="0.6">0.6%</button>
+            <button type="button" class="chip" data-rate="0.9">0.9%</button>
+            <button type="button" class="chip" data-rate="1.2">1.2%</button>
+            <button type="button" class="chip" data-rate="1.4">1.4%</button>
+            <button type="button" class="chip" data-rate="1.8">1.8%</button>
+          </div>
         </div>
-        <div style="width: 100%; font-size: 12px; color: #666;">(五星基礎率 12%，觸發非洲玉時中標率將自動換算)</div>
-    </div>
 
-    <!-- 模式一：固定隻數，求抽數 CDF -->
-    <div id="mode1" class="tab-content active">
-        <div class="control-group" style="background: #e8f5e9; border-color: #c8e6c9;">
-            <label>想抽到幾隻目標角色？ 
-                <input type="number" id="targetCopies" value="1" min="1" max="10">
-            </label>
-            <button onclick="calculateMode1()" style="background-color: #2e7d32; margin-left: auto;" id="btnMode1">🚀 執行模擬</button>
+        <div class="field">
+          <label for="baseRate">五星基礎出率</label>
+          <select id="baseRate">
+            <option value="12" selected>12%（超獸／激獸／英雄祭）</option>
+            <option value="8.4">8.4%（2020 年 4 月前的舊制）</option>
+          </select>
+          <p class="hint">官方自 2020/04/03 起，已把原 8.4% 的寶珠轉蛋統一提升為 12%（★4 由 91.6% 降為 88%）。</p>
         </div>
 
-        <div id="mode1Results" style="display: none;">
-            <div class="stats-grid">
-                <div class="stat-card c-green">
-                    <h4>幸運落點 (前 25%)</h4>
-                    <div class="value"><span id="stat25">0</span> 抽</div>
-                    <div class="sub-text">1/4 的玩家在此之前畢業</div>
+        <div class="field field-frag">
+          <label for="currentShards">初始星星碎片</label>
+          <div class="field-inline">
+            <input type="number" id="currentShards" value="0" min="0" max="50" step="1" inputmode="numeric">
+            <span class="unit">/ 50</span>
+          </div>
+          <div class="frag-grid" id="shardGrid" role="group" aria-label="星星碎片數量"></div>
+          <p class="hint">碎片跨卡池累積，不會因抽到五星而清零；滿 50 顆強制發動非洲玉。</p>
+        </div>
+
+        <div class="field">
+          <label for="simCount">模擬樣本數</label>
+          <select id="simCount">
+            <option value="100000">10 萬次（快速）</option>
+            <option value="500000">50 萬次（平衡）</option>
+            <option value="1000000" selected>100 萬次（高精度）</option>
+            <option value="5000000">500 萬次（需較高硬體效能）</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="seed">亂數種子</label>
+          <div class="field-inline">
+            <input type="text" id="seed" value="" placeholder="留空 = 每次隨機" spellcheck="false">
+            <button type="button" class="btn btn-ghost btn-sm" id="btnSeedRoll" title="產生新種子">⟳</button>
+          </div>
+          <p class="hint">填入種子即可重現同一組結果。</p>
+        </div>
+
+        <p class="hint summary-line" id="setupSummary"></p>
+      </div>
+    </aside>
+
+    <div class="dash-main">
+      <div class="dash-tabs" role="tablist" aria-label="分析模式">
+        <button class="dash-tab active" role="tab" aria-selected="true" data-view="view1">目標抽數 · CDF</button>
+        <button class="dash-tab" role="tab" aria-selected="false" data-view="view2">預期隻數 · PDF</button>
+      </div>
+
+      <!-- ---------------------- 模式一 ---------------------- -->
+      <div class="dash-view" id="view1">
+        <div class="panel dash-control">
+          <div class="dash-control-left">
+            <label for="targetCopies">想抽到幾隻目標角色</label>
+            <div class="field-inline">
+              <input type="number" id="targetCopies" value="1" min="1" max="20" step="1" inputmode="numeric">
+              <span class="unit">隻</span>
+            </div>
+          </div>
+          <div class="dash-control-right">
+            <button class="btn btn-primary" id="btnMode1">執行模擬</button>
+            <button class="btn btn-ghost" id="btnCancel1" hidden>取消</button>
+            <p class="work-hint" id="workEstimate1"></p>
+          </div>
+        </div>
+
+        <div class="progress" id="progress1" hidden>
+          <div class="progress-track"><div class="progress-fill" id="progressFill1"></div></div>
+          <div class="progress-text"><span id="progressText1">運算中…</span><span id="progressPct1">0%</span></div>
+        </div>
+
+        <div id="mode1Results" class="results" hidden>
+          <div class="stat-grid">
+            <article class="stat-card rank-25">
+              <p class="stat-label">幸運落點 · 前 25%</p>
+              <p class="stat-value"><span data-count id="stat25">0</span><span class="stat-unit">抽</span></p>
+              <p class="stat-sub">≈ <span id="stat25Orbs">0</span> 寶珠</p>
+            </article>
+            <article class="stat-card rank-50">
+              <p class="stat-label">中位數 · 50%</p>
+              <p class="stat-value"><span data-count id="stat50">0</span><span class="stat-unit">抽</span></p>
+              <p class="stat-sub">≈ <span id="stat50Orbs">0</span> 寶珠</p>
+            </article>
+            <article class="stat-card rank-85">
+              <p class="stat-label">安全準備線 · 85%</p>
+              <p class="stat-value"><span data-count id="stat85">0</span><span class="stat-unit">抽</span></p>
+              <p class="stat-sub">≈ <span id="stat85Orbs">0</span> 寶珠</p>
+            </article>
+            <article class="stat-card rank-99">
+              <p class="stat-label">極端非酋線 · 99%</p>
+              <p class="stat-value"><span data-count id="stat99">0</span><span class="stat-unit">抽</span></p>
+              <p class="stat-sub">≈ <span id="stat99Orbs">0</span> 寶珠</p>
+            </article>
+          </div>
+
+          <div class="panel chart-panel">
+            <div class="chart-head">
+              <div>
+                <h3>達成率 vs 抽數</h3>
+                <p>樣本數 <span id="dispSimCount1">—</span> · 曲線陡峭處即非洲玉密集觸發點</p>
+              </div>
+              <div class="chart-tools">
+                <div class="seg" role="group" aria-label="X 軸單位">
+                  <button class="seg-btn active" data-axis="pulls">抽數</button>
+                  <button class="seg-btn" data-axis="orbs">寶珠</button>
                 </div>
-                <div class="stat-card c-blue">
-                    <h4>中位數 (50% 達成率)</h4>
-                    <div class="value"><span id="stat50">0</span> 抽</div>
-                    <div class="sub-text">擊敗一半玩家的基準線</div>
+                <button class="btn btn-ghost btn-sm" id="btnSaveCurve">存檔此曲線</button>
+              </div>
+            </div>
+            <div class="chart-wrap"><canvas id="cdfChart" role="img" aria-label="累積達成率曲線圖"></canvas></div>
+            <div class="chart-legend" id="cdfLegend"></div>
+            <div class="compare-list" id="compareList" hidden></div>
+          </div>
+
+          <div class="grid-2">
+            <div class="panel chart-panel">
+              <div class="chart-head">
+                <div>
+                  <h3>分位數的抽數誤差</h3>
+                  <p>誤差棒＝95% 信賴半寬：99% 那一點其實不是精確值</p>
                 </div>
-                <div class="stat-card c-orange">
-                    <h4>安全準備線 (85%)</h4>
-                    <div class="value"><span id="stat85">0</span> 抽</div>
-                    <div class="sub-text">多數非酋的極限落點</div>
-                </div>
-                <div class="stat-card c-red">
-                    <h4>極端非酋線 (99%)</h4>
-                    <div class="value"><span id="stat99">0</span> 抽</div>
-                    <div class="sub-text">幾乎保證一定能畢業的抽數</div>
-                </div>
+              </div>
+              <div class="chart-wrap chart-wrap-short"><canvas id="ciChart" role="img" aria-label="分位數信賴區間圖"></canvas></div>
             </div>
 
-            <!-- CDF 機率分佈圖表 -->
-            <div class="chart-container">
-                <canvas id="cdfChart"></canvas>
+            <div class="panel table-panel">
+              <h3>里程碑：各達成率所需抽數</h3>
+              <div class="table-scroll">
+                <table class="data-table" id="milestoneTable">
+                  <thead>
+                    <tr><th>達成率</th><th>所需抽數</th><th>所需寶珠</th><th>95% 區間</th><th>評價</th></tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+              </div>
             </div>
-            <div style="text-align: center; font-size: 13px; color: #666; margin-bottom: 20px;">
-                圖表說明：隨抽數增加，累積獲得目標的機率變化 (CDF)。樣本數：<span id="dispSimCount1"></span>。<br>
-                曲線陡峭上升的區間，代表非洲玉保底機制的密集觸發點。
+          </div>
+
+          <div class="model-note" id="mode1Note"></div>
+        </div>
+      </div>
+
+      <!-- ---------------------- 模式二 ---------------------- -->
+      <div class="dash-view" id="view2" hidden>
+        <div class="panel dash-control">
+          <div class="dash-control-left">
+            <label for="simPulls">準備了多少抽</label>
+            <div class="field-inline">
+              <input type="number" id="simPulls" value="100" min="1" max="5000" step="1" inputmode="numeric">
+              <span class="unit">抽</span>
+            </div>
+            <p class="hint">≈ <strong id="pullsOrbs">500</strong> 顆寶珠（1 抽 = 5 寶珠）</p>
+          </div>
+          <div class="dash-control-right">
+            <button class="btn btn-primary" id="btnMode2">執行模擬</button>
+            <button class="btn btn-ghost" id="btnCancel2" hidden>取消</button>
+            <p class="work-hint" id="workEstimate2"></p>
+          </div>
+        </div>
+
+        <div class="progress" id="progress2" hidden>
+          <div class="progress-track"><div class="progress-fill" id="progressFill2"></div></div>
+          <div class="progress-text"><span id="progressText2">運算中…</span><span id="progressPct2">0%</span></div>
+        </div>
+
+        <div id="mode2Results" class="results" hidden>
+          <div class="expect-row">
+            <div class="expect-card">
+              <p class="expect-label">數學期望值（平均可得）</p>
+              <p class="expect-value"><span id="resAvg">0.00</span><span class="stat-unit">隻</span></p>
+              <p class="expect-sub" id="resAvgCI">95% 區間 —</p>
+            </div>
+            <div class="expect-card jade">
+              <p class="expect-label">期間平均觸發非洲玉</p>
+              <p class="expect-value"><span id="resJade">0.00</span><span class="stat-unit">次</span></p>
+              <p class="expect-sub">每 100 抽約 <span id="resJade100">0.0</span> 次保底五星</p>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="panel chart-panel">
+              <div class="chart-head">
+                <div>
+                  <h3>機率密度分佈（PDF）</h3>
+                  <p>在 <span id="resPulls2">100</span> 抽之下各個「抽到幾隻」的機率 · 樣本數 <span id="dispSimCount2">—</span></p>
+                </div>
+              </div>
+              <div class="chart-wrap chart-wrap-short"><canvas id="pdfChart" role="img" aria-label="機率密度長條圖"></canvas></div>
             </div>
 
-            <table class="data-table" id="milestoneTable">
+            <div class="panel chart-panel">
+              <div class="chart-head">
+                <div>
+                  <h3>期望值 vs 抽數</h3>
+                  <p>同一條模擬中累積到各抽數時的期望隻數，陰影為 95% 信賴帶</p>
+                </div>
+              </div>
+              <div class="chart-wrap chart-wrap-short"><canvas id="ciChart2" role="img" aria-label="期望值信賴區間圖"></canvas></div>
+            </div>
+          </div>
+
+          <div class="panel table-panel">
+            <h3>分佈明細</h3>
+            <div class="table-scroll">
+              <table class="data-table" id="distTable">
                 <thead>
-                    <tr>
-                        <th width="30%">累積達成率 (機率)</th>
-                        <th width="30%">所需抽數 / 寶珠數</th>
-                        <th width="40%">備註評價</th>
-                    </tr>
+                  <tr><th>獲得隻數</th><th>出現機率</th><th>比例</th><th>至少 N 隻</th></tr>
                 </thead>
                 <tbody></tbody>
-            </table>
+              </table>
+            </div>
+          </div>
         </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================= 機率模型 ========================= -->
+  <section id="model" class="section">
+    <div class="section-head model-head">
+      <div>
+        <h2>機率模型</h2>
+        <p>所有模擬都建立在下面這條公開的機率規則上，參數可以在左側介面調整。</p>
+      </div>
+      <img class="model-mascot" src="assets/mascot-orange.png" alt="" aria-hidden="true">
     </div>
 
-    <!-- 模式二：固定抽數，求隻數 PDF -->
-    <div id="mode2" class="tab-content">
-        <div class="control-group" style="background: #fff3e0; border-color: #ffe0b2;">
-            <label>準備了多少抽？ (寶珠÷5): 
-                <input type="number" id="simPulls" value="100" min="10" max="5000">
-            </label>
-            <button onclick="calculateMode2()" style="background-color: #f57c00; margin-left: auto;" id="btnMode2">🚀 執行模擬</button>
+    <div class="model-grid-2">
+      <div class="model-flow">
+        <div class="flow-step">
+          <div class="flow-icon flow-icon-4"><img src="assets/element-fire.png" alt="火焰元素"></div>
+          <h3>四星 88%</h3>
+          <p>每抽到一隻四星角色，星星碎片 +1（碎片跨卡池累積，不會因為抽到五星而清零）。</p>
         </div>
-        
-        <div id="mode2Results" style="display: none;">
-            <p style="font-size: 14px; margin-bottom: 5px;"><strong>📊 模擬 <span id="resPulls">100</span> 抽結果分佈 (樣本數: <span id="dispSimCount2"></span>)</strong></p>
-            <p style="font-size: 13px; color: #444; margin-top: 0;">數學期望值 (平均可得): <strong id="resAvg" style="color: #d32f2f; font-size: 16px;">0.00</strong> 隻</p>
-            
-            <table class="data-table" id="distTable">
-                <thead>
-                    <tr>
-                        <th width="15%">獲得隻數</th>
-                        <th width="20%">出現機率</th>
-                        <th width="40%">視覺化比例</th>
-                        <th width="25%">累積機率 (至少N隻)</th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-            </table>
+        <div class="flow-step">
+          <div class="flow-icon flow-icon-frag"><span class="star"></span></div>
+          <h3>碎片累積</h3>
+          <p>碎片跨池累積。超過 50 顆時，超出的部分會保留到下一次保底。</p>
         </div>
+        <div class="flow-step">
+          <div class="flow-icon flow-icon-jade"><span class="jade-orb"></span></div>
+          <h3>非洲玉發動</h3>
+          <p>碎片滿 50 顆時強制發動，保證一隻五星。此時目標角色的中標率會被放大。</p>
+        </div>
+      </div>
+
+        <aside class="target-card" aria-label="目前設定的目標角色">
+          <div class="ms-card target-card-inner">
+            <img class="target-card-art" src="assets/monster-head.png" alt="目標角色示意圖">
+            <div class="target-card-body">
+              <p class="target-card-name">你的目標角色</p>
+              <p class="target-card-rate"><span id="cardRate">1.2</span>%</p>
+              <p class="target-card-jade">非洲玉 <span id="cardJade">10.0</span>%</p>
+              <p class="target-card-note">常規機率</p>
+            </div>
+            <img class="target-card-mascot" src="assets/mascot-red.png" alt="" aria-hidden="true">
+          </div>
+        </aside>
     </div>
 
-</div>
+    <div class="panel table-panel">
+      <h3>非洲玉中的目標中標率</h3>
+      <p class="panel-lead">公式：<code>目標非洲玉機率 = 目標常規機率 ÷ 五星基礎出率</code>。假設官方沒有在非洲玉中額外調整機率分佈。下表為 12% 池的對照值（與玩家社群實測一致）。</p>
+      <div class="table-scroll">
+        <table class="data-table" id="jadeTable">
+          <thead>
+            <tr><th>目標常規機率</th><th>非洲玉中標率</th><th>倍率</th><th>常見角色定位</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
 
-<!-- 引入外部 JavaScript -->
+  <!-- ============================ FAQ ============================ -->
+  <section id="faq" class="section">
+    <div class="section-head">
+      <h2>常見機率迷思</h2>
+      <p>抽卡之前，先把幾個最容易搞錯的地方釐清。</p>
+    </div>
+
+    <div class="faq-list">
+      <details class="faq-item">
+        <summary>雙 UP 卡池機率可以直接相加嗎？</summary>
+        <div class="faq-body">
+          <p>要看你的「目標定義」是什麼。</p>
+          <h4>情境一：你只想要「任意兩隻」這類角色</h4>
+          <p>A / B 你都 OK，結果可能是 2 隻 A、2 隻 B、或 1 隻 A ＋ 1 隻 B。這種情況下 A 與 B 對你來說是「等價」的中獎事件，<strong>可以近似視為總機率 2.4%、目標數量 = 2</strong> 來做估算。</p>
+          <h4>情境二：你一定要「A 一隻 ＋ B 一隻」都抽齊</h4>
+          <p>抽到第 1 隻 A 之後，A 對你來說就變成「溢出」，真正有用的只剩 B 那 1.2%。等於你前期機率是 2.4%，但中途會忽然掉回 1.2%。這在統計上屬於「<strong>集齊問題（Coupon Collector's Problem）</strong>」，不能單純用 2.4% 和「兩隻」來替代，實際需要的抽數會比「任意兩隻」多很多。</p>
+          <p class="faq-note">本工具的「目標數量」是針對「同一隻角色的累計 copies」設計的。若要精準分析「湊齊多隻不同角色」，需要另外撰寫專門的多目標模擬邏輯。</p>
+        </div>
+      </details>
+
+      <details class="faq-item">
+        <summary>非洲玉觸發後機率真的會放大嗎？</summary>
+        <div class="faq-body">
+          <p><strong>是的，邏輯是這樣的：</strong>常規一抽中，五星只有 12%，也就是「每 12 抽才會有 1 隻五星」，而那隻五星的機率分母是 12%。</p>
+          <p>非洲玉是 <strong>100% 必定出五星</strong>，所以同一個目標角色在非洲玉中的機率被放大為：</p>
+          <p class="formula">目標非洲玉機率 = 目標常規機率 ÷ 五星基礎出率 = 1.2% ÷ 12% = <strong>10%</strong></p>
+          <p>也就是一抽非洲玉的期望收益，等於常規抽 8.3 抽的目標產出量。</p>
+          <p class="faq-note">注意：這假設官方沒有在非洲玉中「額外調整」機率分佈。</p>
+        </div>
+      </details>
+
+      <details class="faq-item">
+        <summary>模擬器顯示 85% 機率需要 100 抽，為什麼我實際抽了 80 抽就出貨了？</summary>
+        <div class="faq-body">
+          <p><strong>完全正常！</strong>模擬器計算的是「大數法則下的分佈」，不是「您一定會抽到」。</p>
+          <p>85% 達成率的意思是：有 85% 的人在 100 抽之內出貨，剩下 15% 的人要更久。你抽 80 抽就出貨，代表你落在那 85% 裡面 —— 恭喜，你比大多數人幸運。</p>
+        </div>
+      </details>
+
+      <details class="faq-item">
+        <summary>每次重新計算結果都略有不同，為什麼？</summary>
+        <div class="faq-body">
+          <p><strong>這是蒙地卡羅方法的特性！</strong>每次計算都會重新抽取大量隨機樣本，樣本數有限時，抽到罕見事件的機率就會有小幅波動。</p>
+          <p>想要完全相同的結果？在參數區的「亂數種子」填入同一組數字即可重現；樣本數拉越高，數值收斂得越快（10 萬次與 500 萬次的差異通常在 1～2 抽以內）。圖表中的「95% 信賴區間」就是用來量化這個誤差的。</p>
+        </div>
+      </details>
+
+      <details class="faq-item">
+        <summary>為什麼曲線圖會有明顯的「階梯」？</summary>
+        <div class="faq-body">
+          <p><strong>這就是非洲玉保底機制的數學特徵！</strong></p>
+          <p>曲線在平緩處慢慢上升（四星的碎片慢慢累積），到了碎片滿 50 的位置，非洲玉強制發動，該抽數之後出現目標的機率會瞬間拉高，於是曲線出現一段陡升。階梯的間距大約是 50 ÷ 0.88 ≈ 57 抽 —— 這也是「平均 57 連（285 珠）觸發一次非洲玉」的由來。</p>
+        </div>
+      </details>
+
+      <details class="faq-item">
+        <summary>非洲玉是抽哪一池的角色？跨池有效嗎？</summary>
+        <div class="faq-body">
+          <p>官方公告寫得很清楚：<strong>非洲玉（星之玉轉蛋）出現的角色，與「蒐集到第 50 顆碎片當下所抽的那個池子」相同</strong>。</p>
+          <p>所以它是可以跨池使用的：你可以刻意在 48/50 或 49/50 的狀態下停手，等到心儀的卡池（通常是超獸／激獸神祭）開啟時再把非洲玉用掉，這是本工具之外最實用的操作技巧之一。</p>
+          <p class="faq-note">注意：本工具的模擬無法預測「碎片滿 50 的當下你在哪一池」，因此非洲玉一律以你設定的目標機率計算，屬於簡化模型。</p>
+        </div>
+      </details>
+
+      <details class="faq-item">
+        <summary>非洲玉可以「自選」嗎？</summary>
+        <div class="faq-body">
+          <p>可以，而且有隱藏機制。依玩家社群的統計：<strong>同一個池子連續觸發 3 顆非洲玉後，第 4 顆起有機會出現「自選」（可指定想抽的角色）</strong>。</p>
+          <ul>
+            <li>第 4 顆：自選機率約 <strong>16.7～17%</strong></li>
+            <li>第 6 顆或之後：約 <strong>25%</strong></li>
+            <li>出自選後計數會 reset，需重新累積</li>
+          </ul>
+          <p>若要靠自選拼特定角色，社群建議至少準備 1,000 珠以上（以 285 珠一顆非洲玉換算，約能累積 3～4 顆）。</p>
+          <p class="faq-note">自選機率屬於官方未公開的隱藏機制，上述數值來自玩家實測統計，僅供參考；本工具的模擬未納入自選機率。</p>
+        </div>
+      </details>
+
+      <details class="faq-item">
+        <summary>目前遊戲的五星出率到底是 12% 還是 8.4%？</summary>
+        <div class="faq-body">
+          <p>兩者都存在，但<strong>現行版本以 12% 為主</strong>：</p>
+          <ul>
+            <li><strong>12%</strong>：超獸神祭、激獸神祭、英雄祭等「祭」池；官方自 2020/04/03 起，也把原本 8.4% 的寶珠轉蛋統一提升為 12%（★4 由 91.6% 降為 88%）。</li>
+            <li><strong>8.4%</strong>：2020 年 4 月之前的舊制，以及部分特殊轉蛋（星塵／特玉等）仍可能見到接近 8.4% 的配置。</li>
+          </ul>
+          <p>本工具的「五星基礎出率」可切換兩者：切到 8.4% 時碎片累積會更快（四星率 91.6%），非洲玉平均間隔也會跟著縮短。</p>
+          <p class="faq-note">另外提醒：限定的機率會隨「限定角色是否加倍」而變動（加倍 0.6%、未加倍 0.4%），常設與期間限定角色則常見 0.9% / 1.2% / 1.4% / 1.8%，本工具的預設按鈕已把這些常見值一併收錄。</p>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <!-- ========================= 免責聲明 ========================= -->
+  <section id="legal" class="section">
+    <div class="section-head">
+      <h2>免責聲明與使用條款</h2>
+      <p>使用本工具即代表你同意並理解以下內容。</p>
+    </div>
+
+    <div class="legal-grid">
+      <article>
+        <h3>模擬數字未必準確</h3>
+        <p>本工具輸出的所有圖表、預測抽數與百分比（例如「99% 達成率」、「中位數 50 抽」等），皆為蒙地卡羅演算法在有限樣本數下的<strong>近似結果</strong>，未必準確。每次執行的結果都可能略有差異，且無法保證與實際伺服器結果完全一致。</p>
+      </article>
+      <article>
+        <h3>機率純屬理論推算</h3>
+        <p>本工具的 CDF/PDF 曲線，皆是基於<strong>官方目前公開之名目機率（如 12% 基礎五星率、50 抽保底機制等）</strong>，於本地瀏覽器進行數學模擬的結果。遊戲原廠有權隨時在伺服器端更改抽卡演算法或保底規則，本工具無法保證其數學模型能 100% 同步或反映官方伺服器最底層的真實代碼運作。</p>
+      </article>
+      <article>
+        <h3>AI 輔助生成代碼之風險</h3>
+        <p>專案部分程式碼、演算法設計與文件內容，係在人工智慧 (AI) 工具輔助下產生或修改。儘管已盡力測試與檢查，仍可能存在邏輯瑕疵或極端情境未覆蓋之錯誤。使用者在依據本工具結果作出任何決策前，應自行判斷與驗證。</p>
+      </article>
+      <article>
+        <h3>非官方性質</h3>
+        <p>本專案為玩家自發開發之研究與學習用工具，與《怪物彈珠》原廠營運團隊（MIXI, Inc. / XFLAG）無任何官方關係、授權、合作或贊助。頁面中出現的《怪物彈珠》相關圖像素材取自官方網站，僅用於非商業的玩家研究用途。</p>
+      </article>
+      <article>
+        <h3>風險自負與不承擔賠償責任</h3>
+        <p>數學機率僅供參考，<strong>「機率高」絕不等於「一定會中」</strong>。因使用本工具或依據其結果進行寶珠消耗、現金課金、遊戲行為等所導致之任何虛擬或實際損失，開發者與任何貢獻者均不承擔賠償或法律責任。</p>
+      </article>
+      <article>
+        <h3>呼籲理性消費</h3>
+        <p>抽卡本質上是隨機事件（RNG）。請務必衡量自身財務能力，<strong>量力而為，理性課金</strong>。遊戲應以娛樂與放鬆為目的，請避免沉迷。</p>
+      </article>
+      <article>
+        <h3>系統效能與免責</h3>
+        <p>本工具會在使用者瀏覽器端執行高達一百萬次的密集運算（蒙地卡羅模擬）。運算已放在 Web Worker 中以避免畫面凍結，但極少數情況下仍可能導致老舊設備的瀏覽器短暫卡頓。開發者不對因使用本工具而造成的設備當機或資料遺失負責。</p>
+      </article>
+    </div>
+  </section>
+
+  <!-- ========================== 部署 ========================== -->
+  <section id="deploy" class="section">
+    <div class="section-head">
+      <h2>部署說明</h2>
+      <p>純前端網頁應用程式，不需要伺服器或後端。</p>
+    </div>
+
+    <div class="panel deploy-panel">
+      <ol class="deploy-steps">
+        <li>將本專案推送到 GitHub 儲存庫。</li>
+        <li>在該儲存庫的 <code>Settings → Pages</code> 中：Source 選 <code>main</code> 分支，目錄選 <code>/(root)</code> 或 <code>docs</code>（依你放檔案位置而定）。</li>
+        <li>儲存後稍等一會兒，GitHub 會產生一個網址，例如 <code>https://your-username.github.io/your-repo-name/</code>。</li>
+        <li>將此網址填到本 README 的「點我進入」連結中。</li>
+      </ol>
+      <p class="deploy-link">目前狀態：<span class="muted">尚未部署 —— 連結預留於 README 的「點我進入」欄位</span></p>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <p class="footer-name">怪物彈珠抽卡分析器</p>
+    <nav class="footer-nav" aria-label="頁尾導覽">
+      <a href="#model">機率模型</a>
+      <a href="#faq">常見迷思</a>
+      <a href="#legal">免責聲明</a>
+      <a href="#deploy">部署說明</a>
+    </nav>
+    <p class="footer-brand">
+      <img class="footer-mascot" src="assets/mascot-book.png" alt="" aria-hidden="true">
+      <span class="ms-logo" aria-hidden="true"></span>
+      <span>《怪物彈珠》Monster Strike — 官方網站素材（非官方・非商業用途）</span>
+    </p>
+    <p class="footer-note">
+      非官方玩家自製工具 · 與 MIXI / XFLAG 無關 · 素材取自 monster-strike.com.tw 官方網站，僅供非商業研究用途<br>
+      圖表使用 <a href="https://www.chartjs.org/" target="_blank" rel="noopener">Chart.js</a>（MIT） ·
+      蒙地卡羅演算法設計參考 <a href="https://fgo-friend.illya.tw/strange-tool/gashapon-p-calc" target="_blank" rel="noopener">FGO 抽卡機率計算</a> 與 <a href="https://gino8246.github.io/Gacha_Simulator/" target="_blank" rel="noopener">米池計算器</a>
+    </p>
+  </div>
+</footer>
+
+<script src="assets/vendor/chart.umd.js"></script>
+<script src="sim-core.js"></script>
 <script src="logic.js"></script>
 </body>
 </html>

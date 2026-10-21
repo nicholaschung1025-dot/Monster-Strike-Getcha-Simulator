@@ -1,0 +1,25 @@
+# dependencies / build
+node_modules/
+dist/
+.cache/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# editors
+.vscode/
+.idea/
+*.swp
+
+# local env
+.env
+.env.local
+
+# review artifacts
+.review/
+.taste-skill/
+
+# graphify cache (outputs live outside the repo)
+graphify-out/
