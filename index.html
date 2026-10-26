@@ -5,42 +5,49 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>怪物彈珠抽卡分析器 — 蒙地卡羅寶珠資源規劃</title>
 <meta name="description" content="《怪物彈珠》進階抽卡預測工具。以蒙地卡羅方法在瀏覽器端執行 100 萬次模擬，計算含「非洲玉」保底機制的抽卡機率分佈，協助你規劃寶珠資源。">
-<meta name="theme-color" content="#080c22">
+<meta name="theme-color" content="#f6f6f2">
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap">
+<link rel="preconnect" href="https://api.fontshare.com">
+<link rel="preconnect" href="https://cdn.fontshare.com" crossorigin>
+<link href="https://api.fontshare.com/v2/css?f[]=chillax@400,500,600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="ui.css">
 </head>
 <body>
 
-<div class="bg-base" aria-hidden="true"></div>
-<div class="bg-grid" aria-hidden="true"></div>
-<div class="bg-aurora" aria-hidden="true"></div>
-
 <header class="topbar">
-  <div class="topbar-inner">
-    <a class="brand" href="#top">
-      <span class="brand-mark" aria-hidden="true"></span>
-      <span class="brand-name">怪物彈珠抽卡分析器</span>
-    </a>
-    <div class="topbar-meta">
-      <span class="meta-chip">目標 <b id="metaRate">1.2%</b></span>
-      <span class="meta-chip">非洲玉 <b id="metaJade">10.0%</b></span>
-      <span class="meta-chip">樣本 <b id="metaIter">100 萬</b></span>
-    </div>
-    <nav class="topnav" aria-label="主要導覽">
-      <a href="#model">機率模型</a>
-      <a href="#faq">常見迷思</a>
-      <a href="#legal">免責聲明</a>
-    </nav>
-  </div>
+  <a class="brand" href="#top"><span class="brand-dot" aria-hidden="true"></span>怪物彈珠抽卡分析器</a>
+  <nav class="topnav" aria-label="主要導覽">
+    <a href="#dash">規劃</a>
+    <a href="#model">機率模型</a>
+    <a href="#faq">常見迷思</a>
+    <a href="#legal">免責聲明</a>
+  </nav>
 </header>
 
 <main id="top">
 
+  <!-- ============================ 首屏 ============================ -->
+  <section class="hero">
+    <div class="hero-shape hero-shape-orb" aria-hidden="true"></div>
+    <div class="hero-shape hero-shape-jade" aria-hidden="true"></div>
+    <img class="hero-monster" src="assets/ms-6815-character.png" width="750" height="668" alt="サクリファイス：魔獣憑依" decoding="async" fetchpriority="high">
+    <div class="hero-copy">
+      <h1>先算清楚，<br>再下這一抽。</h1>
+      <p class="hero-lead">一百萬次蒙地卡羅模擬，連非洲玉保底都算進去的寶珠規劃。1 抽 = 5 寶珠，碎片滿 50 顆強制出五星。</p>
+      <a class="btn btn-primary" href="#dash">開始規劃寶珠</a>
+      <p class="hero-readout">
+        目標機率 <b id="metaRate">1.2%</b>
+        <span aria-hidden="true"> · </span>非洲玉 <b id="metaJade">10.0%</b>
+        <span aria-hidden="true"> · </span>樣本 <b id="metaIter">100 萬</b>
+      </p>
+    </div>
+  </section>
+
   <!-- ============================ 儀表板 ============================ -->
-  <section class="dash">
+  <section class="dash" id="dash">
     <aside class="dash-params">
       <div class="panel">
         <h2 class="panel-title">共用參數</h2>
@@ -67,7 +74,7 @@
             <option value="12" selected>12%（超獸／激獸／英雄祭）</option>
             <option value="8.4">8.4%（2020 年 4 月前的舊制）</option>
           </select>
-          <p class="hint">官方自 2020/04/03 起，已把原 8.4% 的寶珠轉蛋統一提升為 12%（★4 由 91.6% 降為 88%）。</p>
+          <p class="hint">官方自 2020/04/03 起，已把原 8.4% 的寶珠轉蛋統一提升為 12%，四星率由 91.6% 降為 88%。</p>
         </div>
 
         <div class="field field-frag">
@@ -76,7 +83,7 @@
             <input type="number" id="currentShards" value="0" min="0" max="50" step="1" inputmode="numeric">
             <span class="unit">/ 50</span>
           </div>
-          <div class="frag-grid" id="shardGrid" role="group" aria-label="星星碎片數量"></div>
+          <div class="frag-grid" id="shardGrid" role="group" aria-label="星星碎片數量，點選圓點直接設定"></div>
           <p class="hint">碎片跨卡池累積，不會因抽到五星而清零；滿 50 顆強制發動非洲玉。</p>
         </div>
 
@@ -94,12 +101,14 @@
           <label for="seed">亂數種子</label>
           <div class="field-inline">
             <input type="text" id="seed" value="" placeholder="留空 = 每次隨機" spellcheck="false">
-            <button type="button" class="btn btn-ghost btn-sm" id="btnSeedRoll" title="產生新種子">⟳</button>
+            <button type="button" class="btn btn-ghost btn-sm" id="btnSeedRoll" title="產生新種子">換一組</button>
           </div>
           <p class="hint">填入種子即可重現同一組結果。</p>
         </div>
 
         <p class="hint summary-line" id="setupSummary"></p>
+        <p class="work-hint" id="workEstimate1"></p>
+        <p class="work-hint" id="workEstimate2"></p>
       </div>
     </aside>
 
@@ -122,37 +131,25 @@
           <div class="dash-control-right">
             <button class="btn btn-primary" id="btnMode1">執行模擬</button>
             <button class="btn btn-ghost" id="btnCancel1" hidden>取消</button>
-            <p class="work-hint" id="workEstimate1"></p>
+            <div class="progress" id="progress1" hidden>
+              <div class="progress-track"><div class="progress-fill" id="progressFill1"></div></div>
+              <div class="progress-text"><span id="progressText1">運算中…</span><span id="progressPct1">0%</span></div>
+            </div>
           </div>
         </div>
 
-        <div class="progress" id="progress1" hidden>
-          <div class="progress-track"><div class="progress-fill" id="progressFill1"></div></div>
-          <div class="progress-text"><span id="progressText1">運算中…</span><span id="progressPct1">0%</span></div>
-        </div>
-
         <div id="mode1Results" class="results" hidden>
-          <div class="stat-grid">
-            <article class="stat-card rank-25">
-              <p class="stat-label">幸運落點 · 前 25%</p>
-              <p class="stat-value"><span data-count id="stat25">0</span><span class="stat-unit">抽</span></p>
-              <p class="stat-sub">≈ <span id="stat25Orbs">0</span> 寶珠</p>
-            </article>
-            <article class="stat-card rank-50">
-              <p class="stat-label">中位數 · 50%</p>
-              <p class="stat-value"><span data-count id="stat50">0</span><span class="stat-unit">抽</span></p>
-              <p class="stat-sub">≈ <span id="stat50Orbs">0</span> 寶珠</p>
-            </article>
-            <article class="stat-card rank-85">
-              <p class="stat-label">安全準備線 · 85%</p>
+          <div class="hero-stat">
+            <div class="hero-stat-figure">
+              <h3>有 85% 機率在這麼多抽內出貨</h3>
               <p class="stat-value"><span data-count id="stat85">0</span><span class="stat-unit">抽</span></p>
-              <p class="stat-sub">≈ <span id="stat85Orbs">0</span> 寶珠</p>
-            </article>
-            <article class="stat-card rank-99">
-              <p class="stat-label">極端非酋線 · 99%</p>
-              <p class="stat-value"><span data-count id="stat99">0</span><span class="stat-unit">抽</span></p>
-              <p class="stat-sub">≈ <span id="stat99Orbs">0</span> 寶珠</p>
-            </article>
+              <p class="stat-sub">約 <span id="stat85Orbs">0</span> 顆寶珠（1 抽 = 5 寶珠）</p>
+            </div>
+            <ul class="stat-others">
+              <li>幸運的人，前 25% 在 <b><span data-count id="stat25">0</span> 抽</b>（<span id="stat25Orbs">0</span> 珠）就出貨</li>
+              <li>一般水準，中位數 50% 需要 <b><span data-count id="stat50">0</span> 抽</b>（<span id="stat50Orbs">0</span> 珠）</li>
+              <li>極端情況，99% 要 <b><span data-count id="stat99">0</span> 抽</b>（<span id="stat99Orbs">0</span> 珠）才到得了</li>
+            </ul>
           </div>
 
           <div class="panel chart-panel">
@@ -216,27 +213,23 @@
           <div class="dash-control-right">
             <button class="btn btn-primary" id="btnMode2">執行模擬</button>
             <button class="btn btn-ghost" id="btnCancel2" hidden>取消</button>
-            <p class="work-hint" id="workEstimate2"></p>
+            <div class="progress" id="progress2" hidden>
+              <div class="progress-track"><div class="progress-fill" id="progressFill2"></div></div>
+              <div class="progress-text"><span id="progressText2">運算中…</span><span id="progressPct2">0%</span></div>
+            </div>
           </div>
         </div>
 
-        <div class="progress" id="progress2" hidden>
-          <div class="progress-track"><div class="progress-fill" id="progressFill2"></div></div>
-          <div class="progress-text"><span id="progressText2">運算中…</span><span id="progressPct2">0%</span></div>
-        </div>
-
         <div id="mode2Results" class="results" hidden>
-          <div class="expect-row">
-            <div class="expect-card">
-              <p class="expect-label">數學期望值（平均可得）</p>
-              <p class="expect-value"><span id="resAvg">0.00</span><span class="stat-unit">隻</span></p>
-              <p class="expect-sub" id="resAvgCI">95% 區間 —</p>
+          <div class="hero-stat">
+            <div class="hero-stat-figure">
+              <h3>平均可抽到</h3>
+              <p class="stat-value"><span data-count id="resAvg">0.00</span><span class="stat-unit">隻</span></p>
+              <p class="stat-sub" id="resAvgCI">95% 區間 —</p>
             </div>
-            <div class="expect-card jade">
-              <p class="expect-label">期間平均觸發非洲玉</p>
-              <p class="expect-value"><span id="resJade">0.00</span><span class="stat-unit">次</span></p>
-              <p class="expect-sub">每 100 抽約 <span id="resJade100">0.0</span> 次保底五星</p>
-            </div>
+            <ul class="stat-others">
+              <li>這段期間平均觸發非洲玉 <b><span data-count id="resJade">0.00</span> 次</b>，每 100 抽約 <span id="resJade100">0.0</span> 次保底五星</li>
+            </ul>
           </div>
 
           <div class="grid-2">
@@ -277,47 +270,54 @@
     </div>
   </section>
 
+  <!-- ====================== 亂數的一段話 ====================== -->
+  <section class="band">
+    <figure class="band-media">
+      <img src="assets/ms-6809-character.png" width="750" height="668" alt="家族を護りし薔薇の吸血鬼 カーミラ" loading="lazy" decoding="async">
+    </figure>
+    <div class="band-copy">
+      <p class="band-statement">寶珠沒有記憶，也不會欠你一隻。</p>
+      <p>蒙地卡羅不做預言：它把一百萬種可能的抽法都跑一遍，告訴你每一種要花多少。所謂 85% 達成率，是 85% 的抽法落在那條線之內。</p>
+    </div>
+  </section>
+
   <!-- ========================= 機率模型 ========================= -->
-  <section id="model" class="section">
+  <section id="model" class="section section-jade">
     <div class="section-head model-head">
       <div>
         <h2>機率模型</h2>
-        <p>所有模擬都建立在下面這條公開的機率規則上，參數可以在左側介面調整。</p>
+        <p>每一次模擬都跑在同一條官方公開的規則上，參數可即時調整。</p>
       </div>
-      <img class="model-mascot" src="assets/mascot-orange.png" alt="" aria-hidden="true">
+      <figure class="model-art">
+        <img src="assets/ms-1387-character.png" width="750" height="668" alt="卑弥呼" loading="lazy" decoding="async">
+        <figcaption>卑弥呼</figcaption>
+      </figure>
     </div>
 
     <div class="model-grid-2">
-      <div class="model-flow">
-        <div class="flow-step">
-          <div class="flow-icon flow-icon-4"><img src="assets/element-fire.png" alt="火焰元素"></div>
+      <ol class="model-flow">
+        <li>
           <h3>四星 88%</h3>
-          <p>每抽到一隻四星角色，星星碎片 +1（碎片跨卡池累積，不會因為抽到五星而清零）。</p>
-        </div>
-        <div class="flow-step">
-          <div class="flow-icon flow-icon-frag"><span class="star"></span></div>
-          <h3>碎片累積</h3>
-          <p>碎片跨池累積。超過 50 顆時，超出的部分會保留到下一次保底。</p>
-        </div>
-        <div class="flow-step">
-          <div class="flow-icon flow-icon-jade"><span class="jade-orb"></span></div>
-          <h3>非洲玉發動</h3>
-          <p>碎片滿 50 顆時強制發動，保證一隻五星。此時目標角色的中標率會被放大。</p>
-        </div>
-      </div>
+          <p>每抽到一隻四星角色，星星碎片 +1。碎片跨卡池累積，不會因為抽到五星而清零。</p>
+        </li>
+        <li>
+          <h3>滿 50 顆</h3>
+          <p>碎片滿 50 顆時強制發動非洲玉，保證一隻五星。超出 50 的部分保留到下一次。</p>
+        </li>
+        <li>
+          <h3>中標率放大</h3>
+          <p>非洲玉中的目標中標率 = 目標常規機率 ÷ 五星基礎出率。常規 1.2% 在非洲玉中放大為 10%。</p>
+        </li>
+      </ol>
 
-        <aside class="target-card" aria-label="目前設定的目標角色">
-          <div class="ms-card target-card-inner">
-            <img class="target-card-art" src="assets/ms-6815-character.png" alt="サクリファイス：魔獣憑依" loading="lazy" decoding="async">
-            <div class="target-card-body">
-              <p class="target-card-name">你的目標角色</p>
-              <p class="target-card-rate"><span id="cardRate">1.2</span>%</p>
-              <p class="target-card-jade">非洲玉 <span id="cardJade">10.0</span>%</p>
-              <p class="target-card-note">常規機率</p>
-            </div>
-            <img class="target-card-mascot" src="assets/mascot-red.png" alt="" aria-hidden="true">
-          </div>
-        </aside>
+      <aside class="target-card" aria-label="目前設定的目標角色">
+        <h3 class="sr-only">目前設定的目標角色</h3>
+        <img class="target-card-art" src="assets/ms-6815-ball.png" width="150" height="150" alt="サクリファイス：魔獣憑依" loading="lazy" decoding="async">
+        <div class="target-card-body">
+          <p class="target-card-rate"><span id="cardRate">1.2</span><span class="target-card-rate-unit">% 常規機率</span></p>
+          <p class="target-card-jade">非洲玉 <span id="cardJade">10.0</span>%</p>
+        </div>
+      </aside>
     </div>
 
     <div class="panel table-panel">
@@ -333,25 +333,13 @@
       </div>
     </div>
 
-    <div class="cast-row">
-      <figure class="cast-item">
-        <img src="assets/ms-6815-character.png" alt="サクリファイス：魔獣憑依" loading="lazy" decoding="async">
-        <figcaption>サクリファイス：魔獣憑依</figcaption>
-      </figure>
-      <figure class="cast-item">
-        <img src="assets/ms-6809-character.png" alt="家族を護りし薔薇の吸血鬼 カーミラ" loading="lazy" decoding="async">
-        <figcaption>家族を護りし薔薇の吸血鬼 カーミラ</figcaption>
-      </figure>
-      <figure class="cast-item">
-        <img src="assets/ms-6673-character.png" alt="エリス" loading="lazy" decoding="async">
+    <div class="archival-row">
+      <figure class="archival archival-met">
+        <img src="assets/ms-6673-character.png" width="750" height="668" alt="エリス" loading="lazy" decoding="async">
         <figcaption>エリス</figcaption>
       </figure>
-      <figure class="cast-item">
-        <img src="assets/ms-1387-character.png" alt="卑弥呼" loading="lazy" decoding="async">
-        <figcaption>卑弥呼</figcaption>
-      </figure>
-      <figure class="cast-item">
-        <img src="assets/ms-6383-character.png" alt="新生・堕天の王 ルシファー" loading="lazy" decoding="async">
+      <figure class="archival archival-crespi">
+        <img src="assets/ms-6383-character.png" width="750" height="668" alt="新生・堕天の王 ルシファー" loading="lazy" decoding="async">
         <figcaption>新生・堕天の王 ルシファー</figcaption>
       </figure>
     </div>
@@ -365,8 +353,8 @@
     </div>
 
     <div class="faq-list">
-      <details class="faq-item">
-        <summary>雙 UP 卡池機率可以直接相加嗎？</summary>
+      <details class="faq-item" open>
+        <summary><span class="faq-tab">機率相加</span>雙 UP 卡池機率可以直接相加嗎？</summary>
         <div class="faq-body">
           <p>要看你的「目標定義」是什麼。</p>
           <h4>情境一：你只想要「任意兩隻」這類角色</h4>
@@ -378,7 +366,7 @@
       </details>
 
       <details class="faq-item">
-        <summary>非洲玉觸發後機率真的會放大嗎？</summary>
+        <summary><span class="faq-tab">非洲玉</span>非洲玉觸發後機率真的會放大嗎？</summary>
         <div class="faq-body">
           <p><strong>是的，邏輯是這樣的：</strong>常規一抽中，五星只有 12%，也就是「每 12 抽才會有 1 隻五星」，而那隻五星的機率分母是 12%。</p>
           <p>非洲玉是 <strong>100% 必定出五星</strong>，所以同一個目標角色在非洲玉中的機率被放大為：</p>
@@ -389,15 +377,15 @@
       </details>
 
       <details class="faq-item">
-        <summary>模擬器顯示 85% 機率需要 100 抽，為什麼我實際抽了 80 抽就出貨了？</summary>
+        <summary><span class="faq-tab">出貨時點</span>模擬器顯示 85% 機率需要 100 抽，為什麼我實際抽了 80 抽就出貨了？</summary>
         <div class="faq-body">
           <p><strong>完全正常！</strong>模擬器計算的是「大數法則下的分佈」，不是「您一定會抽到」。</p>
-          <p>85% 達成率的意思是：有 85% 的人在 100 抽之內出貨，剩下 15% 的人要更久。你抽 80 抽就出貨，代表你落在那 85% 裡面 —— 恭喜，你比大多數人幸運。</p>
+          <p>85% 達成率的意思是：有 85% 的人在 100 抽之內出貨，剩下 15% 的人要更久。你抽 80 抽就出貨，代表你落在那 85% 裡面，恭喜，你比大多數人幸運。</p>
         </div>
       </details>
 
       <details class="faq-item">
-        <summary>每次重新計算結果都略有不同，為什麼？</summary>
+        <summary><span class="faq-tab">模擬特性</span>每次重新計算結果都略有不同，為什麼？</summary>
         <div class="faq-body">
           <p><strong>這是蒙地卡羅方法的特性！</strong>每次計算都會重新抽取大量隨機樣本，樣本數有限時，抽到罕見事件的機率就會有小幅波動。</p>
           <p>想要完全相同的結果？在參數區的「亂數種子」填入同一組數字即可重現；樣本數拉越高，數值收斂得越快（10 萬次與 500 萬次的差異通常在 1～2 抽以內）。圖表中的「95% 信賴區間」就是用來量化這個誤差的。</p>
@@ -405,15 +393,15 @@
       </details>
 
       <details class="faq-item">
-        <summary>為什麼曲線圖會有明顯的「階梯」？</summary>
+        <summary><span class="faq-tab">階梯</span>為什麼曲線圖會有明顯的「階梯」？</summary>
         <div class="faq-body">
           <p><strong>這就是非洲玉保底機制的數學特徵！</strong></p>
-          <p>曲線在平緩處慢慢上升（四星的碎片慢慢累積），到了碎片滿 50 的位置，非洲玉強制發動，該抽數之後出現目標的機率會瞬間拉高，於是曲線出現一段陡升。階梯的間距大約是 50 ÷ 0.88 ≈ 57 抽 —— 這也是「平均 57 連（285 珠）觸發一次非洲玉」的由來。</p>
+          <p>曲線在平緩處慢慢上升（四星的碎片慢慢累積），到了碎片滿 50 的位置，非洲玉強制發動，該抽數之後出現目標的機率會瞬間拉高，於是曲線出現一段陡升。階梯的間距大約是 50 ÷ 0.88 ≈ 57 抽，這也是「平均 57 連（285 珠）觸發一次非洲玉」的由來。</p>
         </div>
       </details>
 
       <details class="faq-item">
-        <summary>非洲玉是抽哪一池的角色？跨池有效嗎？</summary>
+        <summary><span class="faq-tab">跨池</span>非洲玉是抽哪一池的角色？跨池有效嗎？</summary>
         <div class="faq-body">
           <p>官方公告寫得很清楚：<strong>非洲玉（星之玉轉蛋）出現的角色，與「蒐集到第 50 顆碎片當下所抽的那個池子」相同</strong>。</p>
           <p>所以它是可以跨池使用的：你可以刻意在 48/50 或 49/50 的狀態下停手，等到心儀的卡池（通常是超獸／激獸神祭）開啟時再把非洲玉用掉，這是本工具之外最實用的操作技巧之一。</p>
@@ -422,7 +410,7 @@
       </details>
 
       <details class="faq-item">
-        <summary>非洲玉可以「自選」嗎？</summary>
+        <summary><span class="faq-tab">自選</span>非洲玉可以「自選」嗎？</summary>
         <div class="faq-body">
           <p>可以，而且有隱藏機制。依玩家社群的統計：<strong>同一個池子連續觸發 3 顆非洲玉後，第 4 顆起有機會出現「自選」（可指定想抽的角色）</strong>。</p>
           <ul>
@@ -436,11 +424,11 @@
       </details>
 
       <details class="faq-item">
-        <summary>目前遊戲的五星出率到底是 12% 還是 8.4%？</summary>
+        <summary><span class="faq-tab">出率版本</span>目前遊戲的五星出率到底是 12% 還是 8.4%？</summary>
         <div class="faq-body">
           <p>兩者都存在，但<strong>現行版本以 12% 為主</strong>：</p>
           <ul>
-            <li><strong>12%</strong>：超獸神祭、激獸神祭、英雄祭等「祭」池；官方自 2020/04/03 起，也把原本 8.4% 的寶珠轉蛋統一提升為 12%（★4 由 91.6% 降為 88%）。</li>
+            <li><strong>12%</strong>：超獸神祭、激獸神祭、英雄祭等「祭」池；官方自 2020/04/03 起，也把原本 8.4% 的寶珠轉蛋統一提升為 12%（四星率由 91.6% 降為 88%）。</li>
             <li><strong>8.4%</strong>：2020 年 4 月之前的舊制，以及部分特殊轉蛋（星塵／特玉等）仍可能見到接近 8.4% 的配置。</li>
           </ul>
           <p>本工具的「五星基礎出率」可切換兩者：切到 8.4% 時碎片累積會更快（四星率 91.6%），非洲玉平均間隔也會跟著縮短。</p>
@@ -489,44 +477,34 @@
     </div>
   </section>
 
-  <!-- ========================== 部署 ========================== -->
-  <section id="deploy" class="section">
-    <div class="section-head">
-      <h2>部署說明</h2>
-      <p>純前端網頁應用程式，不需要伺服器或後端。</p>
-    </div>
-
-    <div class="panel deploy-panel">
-      <ol class="deploy-steps">
-        <li>將本專案推送到 GitHub 儲存庫。</li>
-        <li>在該儲存庫的 <code>Settings → Pages</code> 中：Source 選 <code>main</code> 分支，目錄選 <code>/(root)</code> 或 <code>docs</code>（依你放檔案位置而定）。</li>
-        <li>儲存後稍等一會兒，GitHub 會產生一個網址，例如 <code>https://your-username.github.io/your-repo-name/</code>。</li>
-        <li>將此網址填到本 README 的「點我進入」連結中。</li>
-      </ol>
-      <p class="deploy-link">目前狀態：<a href="https://nicholaschung1025-dot.github.io/Monster-Strike-Getcha-Simulator/" target="_blank" rel="noopener">已部署於 GitHub Pages</a><span class="muted">（main 分支 · 路徑 /(root)）</span></p>
-    </div>
-  </section>
-
 </main>
 
 <footer class="site-footer">
+  <div class="footer-mark" aria-hidden="true"></div>
   <div class="footer-inner">
     <p class="footer-name">怪物彈珠抽卡分析器</p>
     <nav class="footer-nav" aria-label="頁尾導覽">
+      <a href="#dash">規劃</a>
       <a href="#model">機率模型</a>
       <a href="#faq">常見迷思</a>
       <a href="#legal">免責聲明</a>
-      <a href="#deploy">部署說明</a>
     </nav>
     <p class="footer-brand">
-      <img class="footer-mascot" src="assets/mascot-book.png" alt="" aria-hidden="true">
-      <span class="ms-logo" aria-hidden="true"></span>
       <span>《怪物彈珠》Monster Strike — 官方網站素材（非官方・非商業用途）</span>
     </p>
     <p class="footer-note">
-      非官方玩家自製工具 · 與 MIXI / XFLAG 無關 · 素材取自 monster-strike.com.tw 官方網站與 MONST DICTIONARY（dic.xflag.com），僅供非商業研究用途<br>
+      非官方玩家自製工具 · 與 MIXI / XFLAG 無關 · 角色素材取自官方 MONST DICTIONARY（dic.xflag.com），僅供非商業研究用途<br>
       圖表使用 <a href="https://www.chartjs.org/" target="_blank" rel="noopener">Chart.js</a>（MIT） ·
       蒙地卡羅演算法設計參考 <a href="https://fgo-friend.illya.tw/strange-tool/gashapon-p-calc" target="_blank" rel="noopener">FGO 抽卡機率計算</a> 與 <a href="https://gino8246.github.io/Gacha_Simulator/" target="_blank" rel="noopener">米池計算器</a>
+    </p>
+    <p class="footer-credits">
+      角色立繪與轉蛋圖示：《怪物彈珠》官方 MONST DICTIONARY（<a href="https://dic.xflag.com/monsterstrike/" target="_blank" rel="noopener">dic.xflag.com</a>）—
+      <a href="https://dic.xflag.com/monsterstrike/character/6815/" target="_blank" rel="noopener">サクリファイス：魔獣憑依</a>、
+      <a href="https://dic.xflag.com/monsterstrike/character/6809/" target="_blank" rel="noopener">家族を護りし薔薇の吸血鬼 カーミラ</a>、
+      <a href="https://dic.xflag.com/monsterstrike/character/6673/" target="_blank" rel="noopener">エリス</a>、
+      <a href="https://dic.xflag.com/monsterstrike/character/1387/" target="_blank" rel="noopener">卑弥呼</a>、
+      <a href="https://dic.xflag.com/monsterstrike/character/6383/" target="_blank" rel="noopener">新生・堕天の王 ルシファー</a>。
+      素材版權歸 MIXI, Inc. / XFLAG 所有，僅用於非商業的玩家研究用途。
     </p>
   </div>
 </footer>

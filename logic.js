@@ -15,12 +15,12 @@
      0. Chart.js 主題
      ====================================================================== */
   if (window.Chart) {
-    Chart.defaults.color = '#a7b3e4';
-    Chart.defaults.borderColor = 'rgba(146,172,255,.12)';
+    Chart.defaults.color = '#54645b';
+    Chart.defaults.borderColor = 'rgba(13,42,28,.12)';
     Chart.defaults.font.family = "'Noto Sans TC','PingFang TC','Microsoft JhengHei',system-ui,sans-serif";
     Chart.defaults.font.size = 12.5;
-    Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(8,12,38,.96)';
-    Chart.defaults.plugins.tooltip.borderColor = 'rgba(146,172,255,.35)';
+    Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(13,42,28,.96)';
+    Chart.defaults.plugins.tooltip.borderColor = 'rgba(255,255,255,.3)';
     Chart.defaults.plugins.tooltip.borderWidth = 1;
     Chart.defaults.plugins.tooltip.padding = 11;
     Chart.defaults.plugins.tooltip.titleColor = '#ffffff';
@@ -58,7 +58,7 @@
           if (bx < p.x + p.w + 4 && bx + w > p.x - 4 && Math.abs(by - p.y) < 22) by = p.y + 23;
         });
         placed.push({ x: bx, y: by, w: w });
-        ctx.fillStyle = 'rgba(8,12,38,.9)';
+        ctx.fillStyle = m.color;
         ctx.strokeStyle = m.color;
         ctx.lineWidth = 1;
         if (ctx.roundRect) {
@@ -69,7 +69,9 @@
         } else {
           ctx.fillRect(bx, by, w, 20);
         }
-        ctx.fillStyle = m.color;
+        var n16 = parseInt(m.color.slice(1), 16);
+        var lum = 0.299 * ((n16 >> 16) & 255) + 0.587 * ((n16 >> 8) & 255) + 0.114 * (n16 & 255);
+        ctx.fillStyle = lum > 150 ? '#0d2a1c' : '#ffffff';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(text, bx + w / 2, by + 10);
@@ -357,7 +359,7 @@
 
   var axisMode = 'pulls';
   var savedCurves = [];
-  var CURVE_COLORS = ['#7cf3c0', '#9d84ff', '#ff9d5c'];
+  var CURVE_COLORS = ['#1d6a4b', '#54645b', '#c9a227'];
 
   /* ======================================================================
      6. 模式一
@@ -449,37 +451,31 @@
     if (cdfChart) cdfChart.destroy();
 
     var marks = [
-      { x: pc.p25, value: pc.p25, color: '#7cf3c0', label: '25%' },
-      { x: pc.p50, value: pc.p50, color: '#7ec8ff', label: '50%' },
-      { x: pc.p85, value: pc.p85, color: '#ffcf5c', label: '85%' },
-      { x: pc.p99, value: pc.p99, color: '#ff7d95', label: '99%' }
+      { x: pc.p25, value: pc.p25, color: '#1d6a4b', label: '25%' },
+      { x: pc.p50, value: pc.p50, color: '#0d2a1c', label: '50%' },
+      { x: pc.p85, value: pc.p85, color: '#f6e016', label: '85%' },
+      { x: pc.p99, value: pc.p99, color: '#c0442e', label: '99%' }
     ];
 
     var points = res.cdf.x.map(function (x, i) { return { x: x, y: res.cdf.y[i] }; });
     var datasets = [{
       label: '累積達成率 (%)',
       data: points,
-      borderColor: function (c) {
-        var g = ctx.createLinearGradient(0, 0, 0, c.chart.height);
-        g.addColorStop(0, 'rgba(255,214,110,1)');
-        g.addColorStop(0.55, 'rgba(120,215,255,1)');
-        g.addColorStop(1, 'rgba(120,140,255,0.9)');
-        return g;
-      },
+      borderColor: '#1d6a4b',
       borderWidth: 2.6,
       pointRadius: 0,
       pointHoverRadius: 5,
       pointHoverBackgroundColor: '#fff',
-      pointHoverBorderColor: '#ffd24a',
+      pointHoverBorderColor: '#0d2a1c',
       tension: 0.25,
       fill: true,
       backgroundColor: function (c) {
         var area = c.chart.chartArea;
-        if (!area) return 'rgba(120,190,255,.12)';
+        if (!area) return 'rgba(29,106,75,.12)';
         var g = ctx.createLinearGradient(0, area.top, 0, area.bottom);
-        g.addColorStop(0, 'rgba(255,205,110,.30)');
-        g.addColorStop(0.45, 'rgba(110,200,255,.18)');
-        g.addColorStop(1, 'rgba(90,120,255,.02)');
+        g.addColorStop(0, 'rgba(29,106,75,.22)');
+        g.addColorStop(0.45, 'rgba(29,106,75,.10)');
+        g.addColorStop(1, 'rgba(29,106,75,.02)');
         return g;
       }
     }];
@@ -521,19 +517,19 @@
         scales: {
           x: {
             type: 'linear',
-            title: { display: true, text: isOrbs ? '累積寶珠數（1 抽 = 5 寶珠）' : '累積抽數', color: '#7784bd' },
+            title: { display: true, text: isOrbs ? '累積寶珠數（1 抽 = 5 寶珠）' : '累積抽數', color: '#54645b' },
             grid: { display: false },
             ticks: {
-              color: '#7784bd',
+              color: '#54645b',
               maxTicksLimit: 9,
               callback: function (v) { return nf(isOrbs ? v * 5 : v); }
             }
           },
           y: {
             min: 0, max: 100,
-            title: { display: true, text: '累積達成率 (%)', color: '#7784bd' },
-            grid: { color: 'rgba(146,172,255,.10)' },
-            ticks: { color: '#7784bd', callback: function (v) { return v + '%'; } }
+            title: { display: true, text: '累積達成率 (%)', color: '#54645b' },
+            grid: { color: 'rgba(13,42,28,.10)' },
+            ticks: { color: '#54645b', callback: function (v) { return v + '%'; } }
           }
         }
       }
@@ -569,8 +565,8 @@
         datasets: [{
           label: '95% 信賴半寬（抽）',
           data: halves,
-          backgroundColor: 'rgba(110,160,255,.45)',
-          borderColor: 'rgba(150,190,255,.8)',
+      backgroundColor: 'rgba(29,106,75,.32)',
+      borderColor: 'rgba(29,106,75,.75)',
           borderWidth: 1,
           borderRadius: 5,
           barPercentage: 0.62
@@ -597,11 +593,11 @@
         scales: {
           x: {
             beginAtZero: true,
-            title: { display: true, text: '抽數誤差 ±（95% 信賴半寬）', color: '#7784bd' },
-            grid: { color: 'rgba(146,172,255,.10)' },
-            ticks: { color: '#7784bd', precision: 0 }
+            title: { display: true, text: '抽數誤差 ±（95% 信賴半寬）', color: '#54645b' },
+            grid: { color: 'rgba(13,42,28,.10)' },
+            ticks: { color: '#54645b', precision: 0 }
           },
-          y: { grid: { display: false }, ticks: { color: '#7784bd' } }
+          y: { grid: { display: false }, ticks: { color: '#54645b' } }
         }
       }
     });
@@ -731,12 +727,12 @@
           maxBarThickness: 54,
           backgroundColor: function (c) {
             var area = c.chart.chartArea;
-            if (!area) return 'rgba(120,180,255,.6)';
+            if (!area) return 'rgba(29,106,75,.6)';
             var g = c.chart.ctx.createLinearGradient(0, area.bottom, 0, area.top);
             var k = c.dataIndex;
-            if (k === 0) { g.addColorStop(0, 'rgba(255,90,118,.3)'); g.addColorStop(1, 'rgba(255,120,140,.95)'); }
-            else if (k === 1) { g.addColorStop(0, 'rgba(120,150,255,.28)'); g.addColorStop(1, 'rgba(150,175,255,.9)'); }
-            else { g.addColorStop(0, 'rgba(255,170,40,.28)'); g.addColorStop(1, 'rgba(255,215,120,.95)'); }
+            if (k === 0) { g.addColorStop(0, 'rgba(178,58,44,.28)'); g.addColorStop(1, 'rgba(196,74,58,.92)'); }
+            else if (k === 1) { g.addColorStop(0, 'rgba(29,106,75,.26)'); g.addColorStop(1, 'rgba(29,106,75,.9)'); }
+            else { g.addColorStop(0, 'rgba(224,196,0,.26)'); g.addColorStop(1, 'rgba(224,196,0,.92)'); }
             return g;
           }
         }]
@@ -750,12 +746,12 @@
           tooltip: { callbacks: { label: function (item) { return ' 出現機率 ' + item.parsed.y.toFixed(3) + '%'; } } }
         },
         scales: {
-          x: { grid: { display: false }, ticks: { color: '#7784bd' } },
+          x: { grid: { display: false }, ticks: { color: '#54645b' } },
           y: {
             min: 0,
-            title: { display: true, text: '出現機率 (%)', color: '#7784bd' },
-            grid: { color: 'rgba(146,172,255,.10)' },
-            ticks: { color: '#7784bd', callback: function (v) { return v + '%'; } }
+            title: { display: true, text: '出現機率 (%)', color: '#54645b' },
+            grid: { color: 'rgba(13,42,28,.10)' },
+            ticks: { color: '#54645b', callback: function (v) { return v + '%'; } }
           }
         }
       }
@@ -780,7 +776,7 @@
           {
             label: '期望值',
             data: mid,
-            borderColor: '#ffd24a',
+            borderColor: '#d9b400',
             borderWidth: 2.4,
             pointRadius: 0,
             tension: 0.2,
@@ -789,17 +785,17 @@
           {
             label: '95% 上界',
             data: upper,
-            borderColor: 'rgba(255,210,74,.28)',
+            borderColor: 'rgba(217,180,0,.28)',
             borderWidth: 1,
             pointRadius: 0,
             tension: 0.2,
             fill: '+1',
-            backgroundColor: 'rgba(255,210,74,.10)'
+            backgroundColor: 'rgba(217,180,0,.10)'
           },
           {
             label: '95% 下界',
             data: lower,
-            borderColor: 'rgba(255,210,74,.28)',
+            borderColor: 'rgba(217,180,0,.28)',
             borderWidth: 1,
             pointRadius: 0,
             tension: 0.2,
@@ -827,15 +823,15 @@
         scales: {
           x: {
             type: 'linear',
-            title: { display: true, text: '累積抽數', color: '#7784bd' },
+            title: { display: true, text: '累積抽數', color: '#54645b' },
             grid: { display: false },
-            ticks: { color: '#7784bd', maxTicksLimit: 8 }
+            ticks: { color: '#54645b', maxTicksLimit: 8 }
           },
           y: {
             min: 0,
-            title: { display: true, text: '期望隻數', color: '#7784bd' },
-            grid: { color: 'rgba(146,172,255,.10)' },
-            ticks: { color: '#7784bd' }
+            title: { display: true, text: '期望隻數', color: '#54645b' },
+            grid: { color: 'rgba(13,42,28,.10)' },
+            ticks: { color: '#54645b' }
           }
         }
       }
