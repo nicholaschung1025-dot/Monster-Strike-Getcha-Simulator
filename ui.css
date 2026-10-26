@@ -673,7 +673,7 @@ select option { background: #10153f; color: var(--ink); }
   width: 100%;
   aspect-ratio: 1 / 1;
   object-fit: cover;
-  object-position: 50% 40%;
+  object-position: 50% 32%;
   background: radial-gradient(circle at 50% 30%, #3a2a6e, #140f3a);
 }
 .target-card-body { padding: 12px 14px 14px; }
@@ -681,6 +681,30 @@ select option { background: #10153f; color: var(--ink); }
 .target-card-rate { font-family: var(--font-display); font-weight: 800; font-size: 26px; color: var(--gold); margin: 0; line-height: 1.1; font-variant-numeric: tabular-nums; }
 .target-card-jade { font-family: var(--font-display); font-weight: 700; font-size: 14.5px; color: var(--jade); margin: 4px 0 0; }
 .target-card-note { font-size: 12.5px; color: var(--ink-3); margin: 0; }
+
+/* 卡池角色：官方 MONST DICTIONARY 女性角色立繪 */
+.cast-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 18px 30px;
+  margin-top: 40px;
+}
+.cast-item { margin: 0; text-align: center; }
+.cast-item img {
+  width: clamp(96px, 12vw, 150px);
+  height: auto;
+  filter: drop-shadow(0 10px 16px rgba(0, 0, 0, .5));
+}
+.cast-item figcaption {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 12.5px;
+  color: var(--ink-2);
+  margin-top: 6px;
+  max-width: 15em;
+}
 
 /* ----------------------------- 14. FAQ / 條款 ----------------------------- */
 .faq-list { display: grid; gap: 8px; }

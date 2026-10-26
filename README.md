@@ -212,9 +212,15 @@ npx serve .
 ├── sim-core.js         蒙地卡羅核心（Worker 與主執行緒共用）
 ├── sim-worker.js       Web Worker 封裝（進度回報、可取消）
 └── assets/
+    ├── ms-6815-*.png   官方角色立繪／轉蛋圖示：サクリファイス：魔獣憑依（激・獣神祭・女）
+    ├── ms-6809-*.png   官方角色立繪／轉蛋圖示：家族を護りし薔薇の吸血鬼 カーミラ（リミテッド・スターズ・女）
+    ├── ms-6673-*.png   官方角色立繪／轉蛋圖示：エリス（激・獣神祭・女）
+    ├── ms-1387-*.png   官方角色立繪／轉蛋圖示：卑弥呼（リミテッド・スターズ・女）
+    ├── ms-6383-*.png   官方角色立繪：新生・堕天の王 ルシファー（獣神化･改・リミテッド・スターズ・女）
     ├── ms-logo.svg     官方網站素材（Logo）
     ├── mascot-*.png    官方網站素材（吉祥物）
     ├── element-fire.png / monster-head.png
+    ├── credits.json    素材來源與版權資訊
     └── vendor/chart.umd.js
 ```
 
@@ -226,7 +232,14 @@ npx serve .
   - [Chart.js](https://www.chartjs.org/) 提供簡潔又強大的圖表套件（MIT，已本地 vendored）。
 
 - **圖像素材**
-  - 《怪物彈珠》官方網站 [monster-strike.com.tw](https://www.monster-strike.com.tw/) 之 Logo 與角色素材，僅用於本非商業玩家研究工具。
+  - 《怪物彈珠》官方網站 [monster-strike.com.tw](https://www.monster-strike.com.tw/) 之 Logo 與吉祥物素材，僅用於本非商業玩家研究工具。
+  - 角色立繪與轉蛋圖示取自官方 MONST DICTIONARY（[dic.xflag.com/monsterstrike](https://dic.xflag.com/monsterstrike/)），皆為**女性角色且相關活動非空白**：
+    [サクリファイス：魔獣憑依（#6815・激・獣神祭）](https://dic.xflag.com/monsterstrike/character/6815/)、
+    [家族を護りし薔薇の吸血鬼 カーミラ（#6809・リミテッド・スターズ）](https://dic.xflag.com/monsterstrike/character/6809/)、
+    [エリス（#6673・激・獣神祭）](https://dic.xflag.com/monsterstrike/character/6673/)、
+    [卑弥呼（#1387・リミテッド・スターズ）](https://dic.xflag.com/monsterstrike/character/1387/)、
+    [ルシファー（#6383・獣神化･改・リミテッド・スターズ）](https://dic.xflag.com/monsterstrike/character/6383/)。
+    版權歸 MIXI, Inc. / XFLAG 所有。
 
 - **AI 輔助開發 (AI Assistance)**
   - 本專案在核心蒙地卡羅演算法設計、程式碼結構、UI 實作與 README 撰寫過程中，有使用 AI 助手協助產生與調整部分程式碼與說明文字。
